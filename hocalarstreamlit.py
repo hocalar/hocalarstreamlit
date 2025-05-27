@@ -2,15 +2,13 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from io import BytesIO
-import base64
 import gspread
 from google.oauth2.service_account import Credentials
 
-# === Google API kimlik doğrulama: base64 encoded credentials.json ===
+# === Google API kimlik doğrulama: base64 YOK ===
 def get_gspread_client():
-    encoded = st.secrets["google"]["credentials"]
-    decoded = base64.b64decode(encoded)
-    creds = Credentials.from_service_account_info(eval(decoded.decode()))
+    creds_dict = st.secrets["google"]  # doğrudan dict
+    creds = Credentials.from_service_account_info(creds_dict)
     return gspread.authorize(creds)
 
 # === Google Sheets verisini oku ===
