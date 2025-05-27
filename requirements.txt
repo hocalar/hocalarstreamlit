@@ -1,9 +1,6 @@
-streamlit
-pandas
-gspread
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-oauth2client
-st-aggrid
-xlsxwriter
+streamlit==1.34.0
+pandas==2.2.2
+gspread==5.12.0
+google-auth==2.29.0
+st-aggrid==0.3.6
+xlsxwriter==3.2.0
