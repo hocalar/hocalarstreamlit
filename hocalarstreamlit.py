@@ -2,44 +2,41 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from io import BytesIO
-import gspread
-from google.oauth2.service_account import Credentials
 
-# === Google API kimlik doğrulama: base64 YOK ===
-def get_gspread_client():
-    creds_dict = st.secrets["google"]  # doğrudan dict
-    creds = Credentials.from_service_account_info(creds_dict)
-    return gspread.authorize(creds)
+# === Google Sheets edit linkini CSV linke dönüştür ===
+def convert_edit_url_to_csv(url):
+    return url.split("/edit")[0] + "/export?format=csv"
 
-# === Google Sheets verisini oku ===
-def read_google_sheet(sheet_id, worksheet_index_or_title, selected_columns):
-    gc = get_gspread_client()
-    sh = gc.open_by_key(sheet_id)
-    ws = sh.get_worksheet(worksheet_index_or_title) if isinstance(worksheet_index_or_title, int) else sh.worksheet(worksheet_index_or_title)
-    df = pd.DataFrame(ws.get_all_records())
+# === Google Sheets'ten veri çek (herkese açık paylaşımlı link) ===
+def read_public_google_sheet(csv_url, selected_columns):
+    df = pd.read_csv(csv_url)
     existing_columns = [col for col in selected_columns if col in df.columns]
-    missing = set(selected_columns) - set(existing_columns)
-    if missing:
-        st.warning(f"Eksik kolonlar: {missing}")
+    missing_columns = set(selected_columns) - set(existing_columns)
+    if missing_columns:
+        st.warning(f"Google Sheet'te bulunmayan sütunlar: {missing_columns}")
     return df[existing_columns]
 
 # === Excel çıktı fonksiyonu ===
 def convert_df_to_excel(df):
     output = BytesIO()
-    writer = pd.ExcelWriter(output, engine="xlsxwriter")
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
     df.to_excel(writer, index=False)
     writer.close()
     return output.getvalue()
 
-# === Sayfa ayarı ===
+# === Sayfa başlığı ===
 st.set_page_config(layout="wide")
 st.title("Hocalar Hisse Analizi")
 
-# === secrets.toml'dan sheet ID'leri ===
-sheet1_id = st.secrets["sheets"]["sheet1_id"]
-sheet2_id = st.secrets["sheets"]["sheet2_id"]
+# === Google Sheets edit linkleri ===
+sheet1_edit_url = "https://docs.google.com/spreadsheets/d/1MnhlPTx6aD5a4xuqsVLRw3ktLmf-NwSpXtw_IteXIFs/edit?usp=drivesdk"
+sheet2_edit_url = "https://docs.google.com/spreadsheets/d/1u9WT-P9dEoXYuCOX1ojkFUySeJVmznc6dEFzhq0Ob8M/edit?usp=drivesdk"
 
-# === Kolonlar ===
+# === CSV linke dönüştür ===
+sheet1_url = convert_edit_url_to_csv(sheet1_edit_url)
+sheet2_url = convert_edit_url_to_csv(sheet2_edit_url)
+
+# === Kolon seçimleri ===
 sheet1_cols = ["ATH Değişimi TL (%)", "Geçen Gün", "AVWAP", "AVWAP +4σ", "% Fark VWAP",
                "POC", "VAL", "VAH", "% Fark POC", "% Fark VAL", "VP Bant / ATH Aralığı (%)"]
 
@@ -49,28 +46,31 @@ sheet2_cols = ["Hisse Adı", "Sektör", "Period", "Ortalama Hedef Fiyat", "OHD -
                "Piyasa Değeri", "Peg Rasyosu", "FD/FAVÖK", "ROIC Oranı", "PD/FCF", "Cari Oran",
                "Net Borç/Favök", "F/K Oranı", "PD/DD Oranı", "Hisse Fiyatı"]
 
+# === Verileri al ===
 st.info("Hisse Temel ve Teknik Değerler Listesi")
-df1 = read_google_sheet(sheet1_id, 0, sheet1_cols)
-df2 = read_google_sheet(sheet2_id, 0, sheet2_cols)
+df1 = read_public_google_sheet(sheet1_url, sheet1_cols)
+df2 = read_public_google_sheet(sheet2_url, sheet2_cols)
+
 df = pd.concat([df2, df1], axis=1)
 
-# === AgGrid yapılandırması ===
+# === Grid yapılandırması ===
 gb = GridOptionsBuilder.from_dataframe(df)
 gb.configure_default_column(filterable=True, sortable=True, resizable=True)
 gb.configure_selection("single", use_checkbox=True)
-gb.configure_side_bar()
+gb.configure_side_bar()  # Kolon ekle/kaldır menüsü
 
+# Sayısal kolonları formatla
 numeric_columns = df.select_dtypes(include="number").columns.tolist()
 for col in numeric_columns:
     gb.configure_column(col, type=["numericColumn", "numberColumnFilter", "customNumericFormat"], precision=2)
 
-# === Hisse Adı sütununa hyperlink ekle ===
+# === Hisse Adı sütununa hyperlink ekle (görünüm değişmeden) ===
 gb.configure_column(
     "Hisse Adı",
     cellRenderer="""
         function(params) {
             const symbol = params.value.replace(/"/g, '');
-            const url = `https://tr.tradingview.com/chart/hOArWHrE/?symbol=BIST:${symbol}`;
+            const url = `https://tr.tradingview.com/chart/hOArWHrE/?symbol=${symbol}`;
             return `<span style="cursor:pointer;"><a href="${url}" target="_blank" style="text-decoration:none;color:#1f77b4;">${params.value}</a></span>`;
         }
     """
@@ -78,7 +78,7 @@ gb.configure_column(
 
 grid_options = gb.build()
 
-# === Tablo gösterimi ===
+# === AgGrid gösterimi ===
 st.subheader("Veri Tablosu")
 grid_response = AgGrid(
     df,
