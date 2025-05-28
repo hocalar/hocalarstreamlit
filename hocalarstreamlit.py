@@ -30,13 +30,11 @@ sheet2_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1Mn
 df1 = read_public_google_sheet(sheet1_url)
 df2 = read_public_google_sheet(sheet2_url)
 
-# Ticker kolonunu Hisse Adı olarak değiştir
 if "Ticker" in df1.columns:
     df1 = df1.rename(columns={"Ticker": "Hisse Adı"})
 if "Ticker" in df2.columns:
     df2 = df2.rename(columns={"Ticker": "Hisse Adı"})
 
-# Birleştirme
 if "Hisse Adı" in df1.columns and "Hisse Adı" in df2.columns:
     df = pd.merge(df2, df1, on="Hisse Adı", how="outer")
 else:
@@ -48,32 +46,39 @@ df = df.fillna("N/A")
 # Yalnızca istenen sütunlar
 target_columns = [
     "Hisse Adı", "ATH Değişimi TL (%)", "Geçen Gün", "AVWAP +4σ",
-    "% Fark VWAP", "% Fark POC", "% Fark VAL", VAH / VAL Yüzdesi (%), "VP Bant / ATH Aralığı (%)",
-    "Period", "Ortalama Hedef Fiyat", "OHD - USD", "Hisse Potansiyeli (Yüzde)", "YDF Oranı",
+    "% Fark VWAP", "% Fark POC", "% Fark VAL", "VP Bant / ATH Aralığı (%)",
+    "Period", "OHD - USD", "Hisse Potansiyeli (Yüzde)", "YDF Oranı",
     "Borç Özkaynak Oranı", "Ödenmiş Sermaye", "FD/FAVÖK",
-    "ROIC Oranı", "Cari Oran", "Net Borç/Favök" 
+    "ROIC Oranı", "Cari Oran", "Net Borç/Favök", "Ortalama Hedef Fiyat"
 ]
-
 df = df[[col for col in target_columns if col in df.columns]]
 
 st.sidebar.header("Filtreler")
 
-# === Kategorik filtreler ===
-for col in df.columns:
-    if df[col].nunique() < 100 and df[col].dtype == 'object':
-        options = df[col].dropna().unique().tolist()
-        selected_options = st.sidebar.multiselect(f"{col}", options, default=options)
-        df = df[df[col].isin(selected_options)]
+# === Hisse Adı filtresi (çoklu seçim) ===
+if "Hisse Adı" in df.columns:
+    hisse_options = df["Hisse Adı"].dropna().unique().tolist()
+    selected_hisseler = st.sidebar.multiselect("Hisse Adı", hisse_options, default=hisse_options)
+    df = df[df["Hisse Adı"].isin(selected_hisseler)]
 
-# === Sayısal filtreler ===
-for col in df.select_dtypes(include='number').columns:
-    min_val = float(df[col].min())
-    max_val = float(df[col].max())
-    selected_range = st.sidebar.slider(
-        f"{col}", min_value=min_val, max_value=max_val,
-        value=(min_val, max_val), step=(max_val - min_val) / 100 if max_val != min_val else 1.0
-    )
-    df = df[df[col].between(*selected_range)]
+# === Diğer kolonlar için slider filtreler ===
+for col in df.columns:
+    if col == "Hisse Adı":
+        continue
+    try:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+        if df[col].notna().sum() > 0:
+            min_val = float(df[col].min())
+            max_val = float(df[col].max())
+            if min_val != max_val:
+                selected_range = st.sidebar.slider(
+                    col, min_value=min_val, max_value=max_val,
+                    value=(min_val, max_val),
+                    step=(max_val - min_val) / 100
+                )
+                df = df[df[col].between(*selected_range)]
+    except:
+        continue
 
 # === Gösterim ===
 st.subheader("Filtrelenmiş Veri Tablosu")
