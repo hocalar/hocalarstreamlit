@@ -48,10 +48,10 @@ df = df.fillna("N/A")
 # Yalnızca istenen sütunlar
 target_columns = [
     "Hisse Adı", "ATH Değişimi TL (%)", "Geçen Gün", "AVWAP +4σ",
-    "% Fark VWAP", "% Fark POC", "% Fark VAL", "VP Bant / ATH Aralığı (%)",
-    "Period", "OHD - USD", "Hisse Potansiyeli (Yüzde)", "YDF Oranı",
+    "% Fark VWAP", "% Fark POC", "% Fark VAL", VAH / VAL Yüzdesi (%), "VP Bant / ATH Aralığı (%)",
+    "Period", "Ortalama Hedef Fiyat", "OHD - USD", "Hisse Potansiyeli (Yüzde)", "YDF Oranı",
     "Borç Özkaynak Oranı", "Ödenmiş Sermaye", "FD/FAVÖK",
-    "ROIC Oranı", "Cari Oran", "Net Borç/Favök", "Ortalama Hedef Fiyat"
+    "ROIC Oranı", "Cari Oran", "Net Borç/Favök" 
 ]
 
 df = df[[col for col in target_columns if col in df.columns]]
