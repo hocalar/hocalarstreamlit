@@ -21,7 +21,7 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 st.set_page_config(layout="wide")
-st.title("Hocalar Hisse Analizi")
+st.title("Hocalar Hisse Verileri Analizi")
 
 # Google Sheets CSV linkleri
 sheet1_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1u9WT-P9dEoXYuCOX1ojkFUySeJVmznc6dEFzhq0Ob8M/edit?usp=drivesdk")
@@ -35,15 +35,21 @@ if "Ticker" in df1.columns:
 if "Ticker" in df2.columns:
     df2 = df2.rename(columns={"Ticker": "Hisse Adı"})
 
+# Period sadece df1'den alınacak
+period_df = df1[["Hisse Adı", "Period"]] if "Period" in df1.columns else pd.DataFrame()
+
+# Merge işlemi
 if "Hisse Adı" in df1.columns and "Hisse Adı" in df2.columns:
-    df = pd.merge(df2, df1, on="Hisse Adı", how="outer")
+    df = pd.merge(df2, df1.drop(columns=["Period"], errors="ignore"), on="Hisse Adı", how="outer")
+    if not period_df.empty:
+        df = pd.merge(df, period_df, on="Hisse Adı", how="left")
 else:
     st.error(f"'Hisse Adı' sütunu her iki tabloda da olmalı.\nSheet1: {list(df1.columns)}\nSheet2: {list(df2.columns)}")
     st.stop()
 
 df = df.fillna("N/A")
 
-# Yalnızca istenen sütunlar
+# İstenen kolonlar
 target_columns = [
     "Hisse Adı", "ATH Değişimi TL (%)", "Geçen Gün", "AVWAP +4σ",
     "% Fark VWAP", "% Fark POC", "% Fark VAL", "VAH / VAL Yüzdesi (%)", "VP Bant / ATH Aralığı (%)",
@@ -55,15 +61,16 @@ df = df[[col for col in target_columns if col in df.columns]]
 
 st.sidebar.header("Filtreler")
 
-# === Hisse Adı filtresi (çoklu seçim) ===
-if "Hisse Adı" in df.columns:
-    hisse_options = df["Hisse Adı"].dropna().unique().tolist()
-    selected_hisseler = st.sidebar.multiselect("Hisse Adı", hisse_options, default=hisse_options)
-    df = df[df["Hisse Adı"].isin(selected_hisseler)]
+# Görünür kolonlar filtresi (çoklu seçim)
+selected_columns = st.sidebar.multiselect(
+    "Görünmesini istediğiniz kolonları seçin",
+    options=df.columns.tolist(),
+    default=df.columns.tolist()
+)
 
-# === Diğer kolonlar için slider filtreler ===
+# Diğer tüm kolonlar için slider filtreler
 for col in df.columns:
-    if col == "Hisse Adı":
+    if col == "Hisse Adı" or col == "Period":
         continue
     try:
         df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -80,11 +87,12 @@ for col in df.columns:
     except:
         continue
 
-# === Gösterim ===
+# Tablo gösterimi
 st.subheader("Filtrelenmiş Veri Tablosu")
-st.dataframe(df, use_container_width=True)
+st.dataframe(df[selected_columns], use_container_width=True)
 
+# Excel indirme
 st.download_button("Excel olarak indir",
-                   convert_df_to_excel(df),
+                   convert_df_to_excel(df[selected_columns]),
                    file_name="hisse_analizi_filtered.xlsx",
                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
