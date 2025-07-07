@@ -87,23 +87,18 @@ selected_columns = st.sidebar.multiselect(
 #    except:
 #        continue
 
-for col in df.columns:
-    if col == "Hisse Adı" or col == "Period":
-        continue
-    try:
-        temp_col = pd.to_numeric(df[col], errors="coerce")
-        if temp_col.notna().sum() > 0:
-            min_val = float(temp_col.min())
-            max_val = float(temp_col.max())
-            if min_val != max_val:
-                selected_range = st.sidebar.slider(
-                    col, min_value=min_val, max_value=max_val,
-                    value=(min_val, max_val),
-                    step=(max_val - min_val) / 100
-                )
-                df = df[temp_col.between(*selected_range)]
-    except:
-        continue
+# Sayısal filtreler
+for col in df.select_dtypes(include='number').columns:
+    min_val = float(df[col].min())
+    max_val = float(df[col].max())
+    selected_range = st.sidebar.slider(
+        f"{col}", min_value=min_val, max_value=max_val,
+        value=(min_val, max_val),
+        step=(max_val - min_val) / 100 if max_val != min_val else 1.0
+    )
+
+    # Filtrele ama NaN olanları bırak
+    df = df[df[col].between(*selected_range) | df[col].isna()]
         
 # Tablo gösterimi
 st.subheader("Filtrelenmiş Veri Tablosu")
