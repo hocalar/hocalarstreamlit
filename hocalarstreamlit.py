@@ -69,24 +69,42 @@ selected_columns = st.sidebar.multiselect(
 )
 
 # Diğer tüm kolonlar için slider filtreler
+#for col in df.columns:
+#    if col == "Hisse Adı" or col == "Period":
+#        continue
+#    try:
+#        df[col] = pd.to_numeric(df[col], errors="coerce")
+#        if df[col].notna().sum() > 0:
+#            min_val = float(df[col].min())
+#            max_val = float(df[col].max())
+#            if min_val != max_val:
+#                selected_range = st.sidebar.slider(
+#                    col, min_value=min_val, max_value=max_val,
+#                    value=(min_val, max_val),
+#                    step=(max_val - min_val) / 100
+#                )
+#                df = df[df[col].between(*selected_range)]
+#    except:
+#        continue
+
 for col in df.columns:
     if col == "Hisse Adı" or col == "Period":
         continue
     try:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-        if df[col].notna().sum() > 0:
-            min_val = float(df[col].min())
-            max_val = float(df[col].max())
+        temp_col = pd.to_numeric(df[col], errors="coerce")
+        if temp_col.notna().sum() > 0:
+            min_val = float(temp_col.min())
+            max_val = float(temp_col.max())
             if min_val != max_val:
                 selected_range = st.sidebar.slider(
                     col, min_value=min_val, max_value=max_val,
                     value=(min_val, max_val),
                     step=(max_val - min_val) / 100
                 )
-                df = df[df[col].between(*selected_range)]
+                df = df[temp_col.between(*selected_range)]
     except:
         continue
-
+        
 # Tablo gösterimi
 st.subheader("Filtrelenmiş Veri Tablosu")
 st.dataframe(df[selected_columns], use_container_width=True)
