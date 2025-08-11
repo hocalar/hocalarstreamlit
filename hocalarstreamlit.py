@@ -52,7 +52,7 @@ df = df.fillna("N/A")
 # İstenen kolonlar
 target_columns = [
     "Hisse Adı", "ATH Değişimi TL (%)", "Geçen Gün", "AVWAP HEDEF+4 (TRY)", "AVWAP HEDEF+4 (EUR)",
-    "% Fark VWAP", "% Fark POC", "% Fark VAL (TRY)", "VAH / VAL Yüzdesi (%)", "% Fark VAL (EUR)", "VP Bant / ATH Aralığı (%)",
+    "% Fark VWAP", "% Fark POC", "% Fark VAL (TRY)", "VAH / VAL Yüzdesi (%) - TRY", "% Fark VAL (EUR)", "VP Bant / ATH Aralığı (%)",
     "Period", "Ortalama Hedef Fiyat", "OHD - USD", "Hisse Potansiyeli (Yüzde)", "YDF Oranı", "Özkaynak Karlılığı", "Yıllık Net Kar", 
     "Borç Özkaynak Oranı", "Ödenmiş Sermaye", "FD/FAVÖK",
     "ROIC Oranı", "Cari Oran", "Net Borç/Favök"
