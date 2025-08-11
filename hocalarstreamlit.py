@@ -24,8 +24,8 @@ st.set_page_config(layout="wide")
 st.title("Hocalar Hisse Verileri Analizi")
 
 # Google Sheets CSV linkleri
-sheet1_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1u9WT-P9dEoXYuCOX1ojkFUySeJVmznc6dEFzhq0Ob8M/edit?usp=drivesdk")
-sheet2_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1MnhlPTx6aD5a4xuqsVLRw3ktLmf-NwSpXtw_IteXIFs/edit?usp=drivesdk")
+sheet1_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1RyNjMTi1SJWz50GiQOBUWz8_F1trMSwz161i_g6fXnQ/edit?usp=drivesdk")
+sheet2_url = convert_edit_url_to_csv("https://docs.google.com/spreadsheets/d/1SBH5EmCv-wxeEIx7sUkE9hYGTs7rSoVfbBicSl_wPxM/edit?usp=drivesdk")
 
 df1 = read_public_google_sheet(sheet1_url)
 df2 = read_public_google_sheet(sheet2_url)
